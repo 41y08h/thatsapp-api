@@ -4,11 +4,13 @@ import {
   Column,
   BaseEntity,
   Unique,
+  OneToMany,
 } from "typeorm";
+import Message from "./Message";
 
 @Entity()
 @Unique(["username"])
-export class User extends BaseEntity {
+export default class User extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -17,4 +19,10 @@ export class User extends BaseEntity {
 
   @Column({ select: false })
   password: string;
+
+  @OneToMany(() => Message, (message) => message.fromUser)
+  sentMessages: Message[];
+
+  @OneToMany(() => Message, (message) => message.toUser)
+  receivedMessages: Message[];
 }

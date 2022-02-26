@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
-import { User } from "../entities/User";
+import User from "../entities/User";
 
 const parseUser: RequestHandler = async (req, res, next) => {
   const header = req.header("Authorization");

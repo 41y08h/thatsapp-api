@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import Joi from "joi";
 import jwt from "jsonwebtoken";
-import { User } from "../../entities/User";
+import User from "../../entities/User";
 import bcrypt from "bcrypt";
 
 const RegisterSchema = Joi.object({

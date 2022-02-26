@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import Joi from "joi";
-import { User } from "../../entities/User";
+import User from "../../entities/User";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
