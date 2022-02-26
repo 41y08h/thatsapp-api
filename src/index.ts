@@ -44,6 +44,13 @@ async function main() {
   });
   io.on("connection", (socket) => {
     console.log("Socket connected");
+
+    socket.on("send-message", ({ text, sendTo }) => {
+      const client = connectedUsers.getUser(sendTo);
+      if (client) {
+        client.socket.emit("message", { text });
+      }
+    });
   });
 
   app.use(express.json());

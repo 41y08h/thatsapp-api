@@ -18,7 +18,7 @@ class ConnectedUsers {
   private debug = Debug("connectedUsers");
 
   async addUser(socket: Socket, user: User) {
-    this.users[socket.id] = { socket, user };
+    this.users[user.username] = { socket, user };
 
     this.debug(`user added: ${user.username}`);
   }
@@ -29,8 +29,8 @@ class ConnectedUsers {
     this.users[socketId] = undefined;
   }
 
-  getUser(socketId: number) {
-    return this.users[socketId];
+  getUser(username: string): { user: User; socket: Socket } {
+    return this.users[username];
   }
 }
 
