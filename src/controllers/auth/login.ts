@@ -23,9 +23,10 @@ const login: RequestHandler = async (req, res) => {
   }
 
   // Check if user exists
-  const user = await User.findOne({
-    where: { username },
-  });
+  const user = await User.findOne(
+    { username },
+    { select: ["id", "username", "password"] }
+  );
   if (!user) {
     return res.status(400).json({
       error: {

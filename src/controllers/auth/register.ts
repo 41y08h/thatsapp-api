@@ -39,10 +39,7 @@ const register: RequestHandler = async (req, res) => {
 
   return res.status(201).json({
     token,
-    user: {
-      id: user.id,
-      username: user.username,
-    },
+    user,
   });
 };
 
