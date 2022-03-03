@@ -33,7 +33,7 @@ const register: RequestHandler = async (req, res) => {
 
   // Sign auth token
   const token = jwt.sign(
-    { id: user.id, username: user.id },
+    { id: user.id, username: user.username },
     process.env.JWT_SECRET
   );
 
