@@ -34,8 +34,8 @@ async function main() {
       type T = jwt.JwtPayload;
       const decoded = jwt.verify(token, process.env.JWT_SECRET) as T;
 
-      const user = await User.findOne({ where: { id: decoded.id } });
-      connectedUsers.addUser(socket, user);
+      socket.user = await User.findOne({ where: { id: decoded.id } });
+      connectedUsers.addUser(socket, socket.user);
       next();
     } catch {
       const error = new Error("Unauthenticated");
@@ -45,10 +45,30 @@ async function main() {
   io.on("connection", (socket) => {
     console.log("Socket connected");
 
-    socket.on("send-message", ({ text, sendTo }) => {
-      const client = connectedUsers.getUser(sendTo);
-      if (client) {
-        client.socket.emit("message", { text });
+    socket.on("send-message", ({ text, sendTo, id }) => {
+      const receiver = connectedUsers.getUser(sendTo);
+      const sender = socket;
+
+      if (receiver) {
+        receiver.socket.emit("message", {
+          id,
+          text,
+          sender: sender.user.username,
+          receiver: receiver.user.username,
+          created_at: new Date().toISOString(),
+        });
+      }
+    });
+
+    socket.on("delivery-receipt", ({ receiptFor, messageId }) => {
+      const user = connectedUsers.getUser(receiptFor);
+      const sender = socket.user;
+
+      if (user) {
+        user.socket.emit("delivery-receipt", {
+          messageId,
+          receiptFrom: sender.username,
+        });
       }
     });
   });
