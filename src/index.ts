@@ -9,28 +9,30 @@ import { Server } from "socket.io";
 import connectedUsers from "./ws/connectedUsers";
 import jwt from "jsonwebtoken";
 import User from "./entities/User";
+import cors from "cors";
+import createDebug from "debug";
 
 async function main() {
   const app = express();
+  app.use(
+    cors({
+      origin: "*",
+    })
+  );
 
   const server = require("http").createServer(app);
   const io = new Server(server, {
     allowEIO3: true,
-    cors: {
-      origin: "*",
-    },
   });
 
   await createConnection();
   console.log("Connected to database");
 
   io.use(async (socket, next) => {
-    const header = socket.handshake.headers.authorization;
-    if (!header) return next();
-
-    const token = header.split(" ")[1];
-
     try {
+      const token = socket.handshake.auth.token;
+      if (!token) throw new Error("Unauthenticated");
+
       type T = jwt.JwtPayload;
       const decoded = jwt.verify(token, process.env.JWT_SECRET) as T;
 
@@ -39,13 +41,19 @@ async function main() {
       next();
     } catch {
       const error = new Error("Unauthenticated");
+      console.log("Unauthenticated");
       next(error);
     }
   });
+
   io.on("connection", (socket) => {
-    console.log("Socket connected");
+    const debug = createDebug("ws");
+    debug("connected");
 
     socket.on("send-message", ({ text, sendTo, id }) => {
+      const debug = createDebug("ws:send-message");
+      debug(`${text} to ${sendTo}`);
+
       const receiver = connectedUsers.getUser(sendTo);
       const sender = socket;
 
@@ -60,14 +68,29 @@ async function main() {
       }
     });
 
-    socket.on("delivery-receipt", ({ receiptFor, messageId }) => {
-      const user = connectedUsers.getUser(receiptFor);
-      const sender = socket.user;
+    socket.on("read-receipt", ({ receiptFor }: { receiptFor: string }) => {
+      const debug = createDebug("ws:read-receipt");
+      debug(`for ${receiptFor}`);
 
+      const user = connectedUsers.getUser(receiptFor);
       if (user) {
-        user.socket.emit("delivery-receipt", {
+        user.socket.emit("read-receipt", {
+          receiptFrom: socket.user.username,
+        });
+      }
+    });
+
+    socket.on("delivery-receipt", ({ receiptFor, messageId }) => {
+      const debug = createDebug("ws:delivery-receipt");
+      debug(`for ${receiptFor}`);
+
+      const sender = connectedUsers.getUser(receiptFor);
+      const receiver = socket.user;
+
+      if (sender) {
+        sender.socket.emit("delivery-receipt", {
           messageId,
-          receiptFrom: sender.username,
+          receiptFrom: receiver.username,
         });
       }
     });
