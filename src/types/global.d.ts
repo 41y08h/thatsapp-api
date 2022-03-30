@@ -5,6 +5,7 @@ declare global {
     interface ProcessEnv {
       JWT_SECRET: string;
       NODE_ENV: "production" | "development";
+      GITHUB_ACCESS_TOKEN: string;
     }
   }
   namespace Express {

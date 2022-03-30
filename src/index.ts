@@ -11,6 +11,9 @@ import jwt from "jsonwebtoken";
 import User from "./entities/User";
 import cors from "cors";
 import createDebug from "debug";
+import fs from "fs";
+import GHaaS from "./services/ghaas";
+import { IImage } from "./interfaces/image";
 
 async function main() {
   const app = express();
@@ -94,6 +97,33 @@ async function main() {
         });
       }
     });
+
+    socket.on(
+      "image",
+      async ({ image, sendTo }: { image: IImage; sendTo: string }) => {
+        const debug = createDebug("ws:image");
+
+        const extension = image.type.split("/")[1];
+        const filename = `${
+          socket.user.username
+        }-${new Date().getTime()}.${extension}`;
+
+        const url = await GHaaS.uploadFile(image.base64, filename);
+
+        debug(`${filename} uploaded to ${url}`);
+
+        const receiver = connectedUsers.getUser(sendTo);
+        const sender = socket;
+
+        if (receiver) {
+          receiver.socket.emit("image", {
+            url,
+            sender: sender.user.username,
+            created_at: new Date().toISOString(),
+          });
+        }
+      }
+    );
   });
 
   app.use(express.json());
