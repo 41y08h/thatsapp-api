@@ -14,6 +14,7 @@ import createDebug from "debug";
 import fs from "fs";
 import GHaaS from "./services/ghaas";
 import { IImage } from "./interfaces/image";
+import config from "./config";
 
 async function main() {
   const app = express();
@@ -22,6 +23,7 @@ async function main() {
       origin: "*",
     })
   );
+  app.use("/localstore", express.static(config.paths.localstore));
 
   const server = require("http").createServer(app);
   const io = new Server(server, {
@@ -53,14 +55,35 @@ async function main() {
     const debug = createDebug("ws");
     debug("connected");
 
-    socket.on("send-message", ({ text, sendTo, id }) => {
+    socket.on("send-message", async ({ text, sendTo, id, image }) => {
       const debug = createDebug("ws:send-message");
       debug(`${text} to ${sendTo}`);
 
       const receiver = connectedUsers.getUser(sendTo);
       const sender = socket;
 
-      if (receiver) {
+      if (!receiver) return;
+
+      if (image) {
+        const extension = image.type.split("/")[1];
+        const filename = `${
+          sender.user.username
+        }-${new Date().getTime()}.${extension}`;
+
+        const url = await GHaaS.uploadFile(image.base64, filename);
+
+        debug(`${filename} uploaded to ${url}`);
+
+        receiver.socket.emit("message", {
+          id,
+          text,
+          image_url: filename,
+          image_size: image.base64.length,
+          sender: sender.user.username,
+          receiver: receiver.user.username,
+          created_at: new Date().toISOString(),
+        });
+      } else
         receiver.socket.emit("message", {
           id,
           text,
@@ -68,7 +91,6 @@ async function main() {
           receiver: receiver.user.username,
           created_at: new Date().toISOString(),
         });
-      }
     });
 
     socket.on("read-receipt", ({ receiptFor }: { receiptFor: string }) => {
@@ -97,33 +119,6 @@ async function main() {
         });
       }
     });
-
-    socket.on(
-      "image",
-      async ({ image, sendTo }: { image: IImage; sendTo: string }) => {
-        const debug = createDebug("ws:image");
-
-        const extension = image.type.split("/")[1];
-        const filename = `${
-          socket.user.username
-        }-${new Date().getTime()}.${extension}`;
-
-        const url = await GHaaS.uploadFile(image.base64, filename);
-
-        debug(`${filename} uploaded to ${url}`);
-
-        const receiver = connectedUsers.getUser(sendTo);
-        const sender = socket;
-
-        if (receiver) {
-          receiver.socket.emit("image", {
-            url,
-            sender: sender.user.username,
-            created_at: new Date().toISOString(),
-          });
-        }
-      }
-    );
   });
 
   app.use(express.json());
