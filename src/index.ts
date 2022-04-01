@@ -15,6 +15,7 @@ import fs from "fs";
 import GHaaS from "./services/ghaas";
 import { IImage } from "./interfaces/image";
 import config from "./config";
+import { IMessageType } from "./interfaces/mesasge";
 
 async function main() {
   const app = express();
@@ -55,7 +56,7 @@ async function main() {
     const debug = createDebug("ws");
     debug("connected");
 
-    socket.on("send-message", async ({ text, sendTo, id, image }) => {
+    socket.on("send-message", async ({ text, sendTo, id, media }) => {
       const debug = createDebug("ws:send-message");
       debug(`${text} to ${sendTo}`);
 
@@ -64,21 +65,29 @@ async function main() {
 
       if (!receiver) return;
 
-      if (image) {
-        const extension = image.type.split("/")[1];
+      if (media) {
+        const extension = media.type.split("/")[1];
         const filename = `${
           sender.user.username
         }-${new Date().getTime()}.${extension}`;
 
-        const url = await GHaaS.uploadFile(image.base64, filename);
+        const url = await GHaaS.uploadFile(media.base64, filename);
 
         debug(`${filename} uploaded to ${url}`);
 
         receiver.socket.emit("message", {
           id,
           text,
-          image_url: filename,
-          image_size: image.base64.length,
+          message_type: IMessageType.IMAGE,
+          media: {
+            url:
+              process.env.NODE_ENV === "production"
+                ? url
+                : `http://10.0.2.2:5000/localstore/${filename}`,
+            size: media.base64.length,
+            filename,
+            type: media.type,
+          },
           sender: sender.user.username,
           receiver: receiver.user.username,
           created_at: new Date().toISOString(),
@@ -89,6 +98,7 @@ async function main() {
           text,
           sender: sender.user.username,
           receiver: receiver.user.username,
+          message_type: IMessageType.TEXT,
           created_at: new Date().toISOString(),
         });
     });
