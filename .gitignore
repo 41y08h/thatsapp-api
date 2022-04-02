@@ -1,6 +1,8 @@
 # Project specific 
 localstore/*
 !localstore/.gitkeep
+temp/*
+!temp/.gitkeep
 
 # Logs
 logs

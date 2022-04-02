@@ -16,6 +16,7 @@ import GHaaS from "./services/ghaas";
 import { IImage } from "./interfaces/image";
 import config from "./config";
 import { IMessageType } from "./interfaces/mesasge";
+import fileUpload from "express-fileupload";
 
 async function main() {
   const app = express();
@@ -65,42 +66,19 @@ async function main() {
 
       if (!receiver) return;
 
-      if (media) {
-        const extension = media.type.split("/")[1];
-        const filename = `${
-          sender.user.username
-        }-${new Date().getTime()}.${extension}`;
-
-        const url = await GHaaS.uploadFile(media.base64, filename);
-
-        debug(`${filename} uploaded to ${url}`);
-
-        receiver.socket.emit("message", {
-          id,
-          text,
-          message_type: IMessageType.IMAGE,
-          media: {
-            url:
-              process.env.NODE_ENV === "production"
-                ? url
-                : `http://10.0.2.2:5000/localstore/${filename}`,
-            size: media.base64.length,
-            filename,
-            type: media.type,
-          },
-          sender: sender.user.username,
-          receiver: receiver.user.username,
-          created_at: new Date().toISOString(),
-        });
-      } else
-        receiver.socket.emit("message", {
-          id,
-          text,
-          sender: sender.user.username,
-          receiver: receiver.user.username,
-          message_type: IMessageType.TEXT,
-          created_at: new Date().toISOString(),
-        });
+      receiver.socket.emit("message", {
+        id,
+        text,
+        media,
+        message_type: media
+          ? media.type.includes("image")
+            ? IMessageType.IMAGE
+            : IMessageType.VIDEO
+          : IMessageType.TEXT,
+        sender: sender.user.username,
+        receiver: receiver.user.username,
+        created_at: new Date().toISOString(),
+      });
     });
 
     socket.on("read-receipt", ({ receiptFor }: { receiptFor: string }) => {
@@ -132,6 +110,13 @@ async function main() {
   });
 
   app.use(express.json());
+  app.use(
+    fileUpload({
+      limits: {
+        fileSize: 16 * 1024 * 1024,
+      },
+    })
+  );
   app.use(morgan("dev"));
   app.use(parseUser);
   app.use(routes);

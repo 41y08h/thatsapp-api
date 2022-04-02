@@ -5,7 +5,7 @@ import config from "../config";
 
 async function uploadFile(base64: string, filename: string) {
   if (process.env.NODE_ENV === "development") {
-    const url = `http://localhost:5000/localstore/${filename}`;
+    const url = `http://10.0.2.2:5000/localstore/${filename}`;
     fs.writeFileSync(path.join(config.paths.localstore, filename), base64, {
       encoding: "base64",
     });

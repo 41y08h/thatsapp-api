@@ -4,6 +4,7 @@ import authenticate from "../middlewares/authenticate";
 
 const messages = Router();
 
-messages.post("/send", authenticate, MessagesController.send);
+messages.post("/", authenticate, MessagesController.send);
+messages.post("/upload-media", authenticate, MessagesController.uploadMedia);
 
 export default messages;
