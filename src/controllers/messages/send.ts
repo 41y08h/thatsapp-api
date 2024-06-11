@@ -3,7 +3,7 @@ import { RequestHandler } from "express";
 import Message from "../../entities/Message";
 import User from "../../entities/User";
 import { UploadedFile } from "express-fileupload";
-import GHaaS from "../../services/ghaas";
+import GHaaS from "../../services/GHaaS";
 import createDebug from "debug";
 import connectedUsers from "../../ws/connectedUsers";
 import { IMessageType } from "../../interfaces/mesasge";

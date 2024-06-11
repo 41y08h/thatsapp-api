@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import { UploadedFile } from "express-fileupload";
-import GHaaS from "../../services/ghaas";
+import GHaaS from "../../services/GHaaS";
 
 const uploadMedia: RequestHandler = async (req, res) => {
   const file = req.files && (req.files.media as UploadedFile);

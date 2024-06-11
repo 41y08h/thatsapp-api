@@ -2,23 +2,21 @@ import "dotenv/config";
 import "reflect-metadata";
 import express from "express";
 import morgan from "morgan";
-import { createConnection } from "typeorm";
 import routes from "./routes";
-import parseUser from "./middlewares/parseUser";
 import { Server } from "socket.io";
+import { createConnection } from "typeorm";
+import parseUser from "./middlewares/parseUser";
 import connectedUsers from "./ws/connectedUsers";
-import jwt from "jsonwebtoken";
-import User from "./entities/User";
 import cors from "cors";
-import createDebug from "debug";
-import fs from "fs";
-import GHaaS from "./services/ghaas";
-import { IImage } from "./interfaces/image";
 import config from "./config";
+import jwt from "jsonwebtoken";
+import createDebug from "debug";
+import User from "./entities/User";
 import { IMessageType } from "./interfaces/mesasge";
 import fileUpload from "express-fileupload";
 
 async function main() {
+  const debug = createDebug("app");
   const app = express();
   app.use(
     cors({
@@ -33,7 +31,7 @@ async function main() {
   });
 
   await createConnection();
-  console.log("Connected to database");
+  debug("database connected");
 
   io.use(async (socket, next) => {
     try {
@@ -123,7 +121,7 @@ async function main() {
 
   const PORT = process.env.PORT || 5000;
   server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    debug(`running on port ${PORT}`);
   });
 }
 

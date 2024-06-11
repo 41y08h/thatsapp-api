@@ -4,6 +4,8 @@ localstore/*
 temp/*
 !temp/.gitkeep
 
+build
+
 # Logs
 logs
 *.log
